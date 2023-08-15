@@ -124,14 +124,18 @@ fun AmountRow(
                             color = Color(0xFFF5F5F5),
                         )
                     )
-                    var convertedColor = Color(0xFF00A86B)
+                    var convertedColor = Color(0xFFFF0000)
                     if (
                         (
                             currencyConversion.conversionPrice * currencyConversion.srcAmount -
-                            currencyConversion.srcPrice * currencyConversion.srcAmount
-                        ) < 0
+                                currencyConversion.srcPrice * currencyConversion.srcAmount
+                        ) > 0
                     ) {
-                        convertedColor = Color(0xFFFF0000)
+                        convertedColor = Color(0xFF00A86B)
+                    } else if (
+                        currencyConversion.conversionPrice == 0F
+                    ) {
+                        convertedColor = Color(0xFFF5F5F5)
                     }
                     Text(
                         modifier = modifier,

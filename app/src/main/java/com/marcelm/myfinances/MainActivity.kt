@@ -18,14 +18,30 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.marcelm.myfinances.ui.components.*
 import com.marcelm.myfinances.ui.theme.MyFinancesTheme
 import android.content.Context
+import android.content.Intent
 import androidx.compose.ui.platform.LocalContext
-import com.marcelm.myfinances.ui.methods.*
+import androidx.core.content.ContextCompat
+import com.marcelm.myfinances.ui.methods.CurrencyConversion
+import com.marcelm.myfinances.ui.methods.GlobalCurrencyConversionChangeListener
+import com.marcelm.myfinances.ui.methods.GlobalCurrencyConversionManager
+import com.marcelm.myfinances.ui.methods.MyForegroundService
+import com.marcelm.myfinances.ui.methods.deleteAmount
+import com.marcelm.myfinances.ui.methods.fetchCurrencyPair
+import com.marcelm.myfinances.ui.methods.fetchStoredAmounts
+import com.marcelm.myfinances.ui.methods.globalCurrencyConversionsVariable
+import com.marcelm.myfinances.ui.methods.storeAmount
 
 class MainActivity : ComponentActivity(), GlobalCurrencyConversionChangeListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         // Add the MainActivity as a listener to global currency conversions changes
         GlobalCurrencyConversionManager.addListener(this@MainActivity)
+
+        // Start the foreground service
+        val serviceIntent = Intent(this, MyForegroundService::class.java)
+        ContextCompat.startForegroundService(this, serviceIntent)
+
         // Set the content of the screen
         setContent {
             MyFinancesTheme {
