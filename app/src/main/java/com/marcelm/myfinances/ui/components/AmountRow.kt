@@ -124,6 +124,15 @@ fun AmountRow(
                             color = Color(0xFFF5F5F5),
                         )
                     )
+                    var convertedColor = Color(0xFF00A86B)
+                    if (
+                        (
+                            currencyConversion.conversionPrice * currencyConversion.srcAmount -
+                            currencyConversion.srcPrice * currencyConversion.srcAmount
+                        ) < 0
+                    ) {
+                        convertedColor = Color(0xFFFF0000)
+                    }
                     Text(
                         modifier = modifier,
                         text = "${CurrencySymbolConverter.getSymbol(currencyConversion.trgtCurrency)} ${
@@ -137,7 +146,7 @@ fun AmountRow(
                         }",
                         style = TextStyle(
                             fontSize = 20.sp,
-                            color = Color(0xFFF5F5F5),
+                            color = convertedColor,
                         )
                     )
                     Text(
@@ -190,7 +199,7 @@ fun AmountRowPreview() {
             srcPrice = 0.86F,
             trgtCurrency = "GBP",
             transactionTime = 1691928664,
-            conversionPrice = 0F
+            conversionPrice = 0.87F
         ),
         onDelete = {}
     )

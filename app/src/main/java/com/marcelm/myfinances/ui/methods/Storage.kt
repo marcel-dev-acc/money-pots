@@ -1,12 +1,14 @@
 package com.marcelm.myfinances.ui.methods
 
 import android.content.Context
-import android.util.Log
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.core.content.edit
 import java.util.*
 
 const val sharedPrefStorageKey: String = "MyFinancesPrefs"
 const val storageKey: String = "currencyConversions"
+
+val globalCurrencyConversionsVariable = mutableStateMapOf<String, CurrencyConversion>()
 
 data class CurrencyConversion(
     val srcCurrency: String,
@@ -34,6 +36,10 @@ object GlobalCurrencyConversionManager {
         return currencyConversions
     }
 
+    fun removeFromGlobalCurrencyConversion(id: String) {
+        currencyConversions.remove(id)
+        notifyListeners(currencyConversions)
+    }
     fun clearGlobalCurrencyConversions() {
         currencyConversions.clear()
         notifyListeners(emptyMap())
@@ -128,8 +134,8 @@ fun deleteAmount(context: Context, id: String) {
     currencyConversions.putAll(GlobalCurrencyConversionManager.getGlobalCurrencyConversions())
     // Remove the specific id
     currencyConversions.remove(id)
-    // Change the global currency conversions map
-    GlobalCurrencyConversionManager.setGlobalCurrencyConversions(currencyConversions)
+    // Remove from global currency conversions map
+    GlobalCurrencyConversionManager.removeFromGlobalCurrencyConversion(id)
     // Store locally
     saveAmountsToPreferences(context, currencyConversions)
 }

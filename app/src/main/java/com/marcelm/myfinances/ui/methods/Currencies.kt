@@ -26,7 +26,7 @@ object CurrencySymbolConverter {
 }
 
 
-fun fetchCurrencyPair(context: Context, currencyConversion: MutableMap.MutableEntry<String, CurrencyConversion>) {
+fun fetchCurrencyPair(context: Context, currencyConversion: Map.Entry<String, CurrencyConversion>) {
     GlobalScope.launch(Dispatchers.IO) {
         val srcCurrency = currencyConversion.value.srcCurrency
         val trgtCurrency = currencyConversion.value.trgtCurrency
