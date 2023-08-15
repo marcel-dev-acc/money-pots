@@ -47,7 +47,18 @@ fun fetchCurrencyPair(context: Context, currencyConversion: MutableMap.MutableEn
                 try {
                     val numPrice = price?.toFloat()
                     if (numPrice !== null) {
-                        storeAmount(context, currencyConversion.value, currencyConversion.key)
+                        storeAmount(
+                            context,
+                            CurrencyConversion(
+                                srcCurrency = currencyConversion.value.srcCurrency,
+                                srcAmount = currencyConversion.value.srcAmount,
+                                srcPrice = currencyConversion.value.srcPrice,
+                                trgtCurrency = currencyConversion.value.trgtCurrency,
+                                transactionTime = currencyConversion.value.transactionTime,
+                                conversionPrice = numPrice,
+                            ),
+                            currencyConversion.key,
+                        )
                     }
                 } catch (e: NumberFormatException) {
                     // Do nothing

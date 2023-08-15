@@ -18,17 +18,17 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.marcelm.myfinances.ui.components.*
 import com.marcelm.myfinances.ui.theme.MyFinancesTheme
 import android.content.Context
+import android.util.Log
 import androidx.compose.ui.platform.LocalContext
-import com.marcelm.myfinances.ui.methods.CurrencyConversion
-import com.marcelm.myfinances.ui.methods.currencyConversions
-import com.marcelm.myfinances.ui.methods.deleteAmount
-import com.marcelm.myfinances.ui.methods.fetchCurrencyPair
-import com.marcelm.myfinances.ui.methods.fetchStoredAmounts
-import com.marcelm.myfinances.ui.methods.storeAmount
+import com.marcelm.myfinances.ui.methods.*
 
-class MainActivity : ComponentActivity() {
+var mainCurrencyConversions: MutableMap<String, CurrencyConversion> = mutableMapOf()
+class MainActivity : ComponentActivity(), GlobalCurrencyConversionChangeListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Add the MainActivity as a listener to global currency conversions changes
+        GlobalCurrencyConversionManager.addListener(this@MainActivity)
+        // Set the content of the screen
         setContent {
             MyFinancesTheme {
                 // A surface container using the 'background' color from the theme
@@ -36,10 +36,19 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = Color(0xFF000024)
                 ) {
-                    Home(context = LocalContext.current)
+                    Main(context = LocalContext.current)
                 }
             }
         }
+    }
+
+    override fun onGlobalCurrencyConversionsChanged(newCurrencyConversions: Map<String, CurrencyConversion>) {
+//        mainCurrencyConversions.clear()
+        mainCurrencyConversions.putAll(newCurrencyConversions)
+        // This function will be called when the global currency conversions map changes
+        Log.d("MainActivity", "Global currency conversions map changed: $newCurrencyConversions")
+        // Set the content of the screen
+
     }
 }
 
@@ -50,21 +59,35 @@ val gradientColors = listOf(
 )
 
 @Composable
-fun Home(context: Context, modifier: Modifier = Modifier, propShowModal: Boolean = false) {
+fun Main(context: Context, modifier: Modifier = Modifier) {
+    Log.d("MainActivity", "Main did render")
 
-    var showModal by remember {
-        mutableStateOf(propShowModal)
+    if (mainCurrencyConversions.isEmpty()) {
+        mainCurrencyConversions.putAll(fetchStoredAmounts(context))
+        Log.d("MainComposable", mainCurrencyConversions.toString())
     }
-
-    // Check if amounts contains any values
-    if (currencyConversions.size === 0) {
-        fetchStoredAmounts(context)
-        for (currencyConversion in currencyConversions) {
+    for (currencyConversion in mainCurrencyConversions) {
+        if (currencyConversion.value.conversionPrice == 0F) {
             fetchCurrencyPair(
                 context = context,
                 currencyConversion = currencyConversion,
             )
         }
+    }
+    Home(context = context, currencyConversions = mainCurrencyConversions)
+}
+
+@Composable
+fun Home(
+    context: Context,
+    modifier: Modifier = Modifier,
+    propShowModal: Boolean = false,
+    currencyConversions: Map<String, CurrencyConversion>,
+) {
+
+    Log.d("MainActivity", "Home did render")
+    var showModal by remember {
+        mutableStateOf(propShowModal)
     }
 
     Box (
@@ -96,7 +119,6 @@ fun Home(context: Context, modifier: Modifier = Modifier, propShowModal: Boolean
                         }
                     }
                 }
-
             }
         }
         AddToPotButton(
@@ -121,8 +143,9 @@ fun Home(context: Context, modifier: Modifier = Modifier, propShowModal: Boolean
 @Preview(showBackground = false)
 @Composable
 fun HomePreview() {
+    val currencyConversionMap = mutableMapOf<String, CurrencyConversion>()
     val id = "47c6977b-e8a3-416e-9c8b-8512314871b8"
-    currencyConversions[id] = CurrencyConversion(
+    currencyConversionMap[id] = CurrencyConversion(
         srcCurrency = "EUR",
         srcAmount = 10.10F,
         srcPrice = 0.86F,
@@ -130,10 +153,13 @@ fun HomePreview() {
         transactionTime = 1691928664,
         conversionPrice = 0F
     )
+    val currencyConversions: MutableMap<String, CurrencyConversion> = mutableMapOf()
+    currencyConversions.putAll(currencyConversionMap)
     MyFinancesTheme {
         Home(
             context = LocalContext.current,
-            propShowModal = true
+            propShowModal = true,
+            currencyConversions = currencyConversions,
         )
     }
 }

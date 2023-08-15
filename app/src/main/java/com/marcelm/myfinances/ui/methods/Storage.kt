@@ -1,6 +1,7 @@
 package com.marcelm.myfinances.ui.methods
 
 import android.content.Context
+import android.util.Log
 import androidx.core.content.edit
 import java.util.*
 
@@ -16,7 +17,40 @@ data class CurrencyConversion(
     val conversionPrice: Float,
 )
 
-val currencyConversions: MutableMap<String, CurrencyConversion> = mutableMapOf()
+interface GlobalCurrencyConversionChangeListener {
+    fun onGlobalCurrencyConversionsChanged(newValues: Map<String, CurrencyConversion>)
+}
+
+object GlobalCurrencyConversionManager {
+    private val listeners = mutableListOf<GlobalCurrencyConversionChangeListener>()
+    private var currencyConversions: MutableMap<String, CurrencyConversion> = mutableMapOf()
+
+    fun setGlobalCurrencyConversions(newValue: Map<String, CurrencyConversion>) {
+        currencyConversions.putAll(newValue)
+        notifyListeners(currencyConversions)
+    }
+
+    fun getGlobalCurrencyConversions(): Map<String, CurrencyConversion> {
+        return currencyConversions
+    }
+
+    fun clearGlobalCurrencyConversions() {
+        currencyConversions.clear()
+        notifyListeners(emptyMap())
+    }
+
+    fun addListener(listener: GlobalCurrencyConversionChangeListener) {
+        listeners.add(listener)
+    }
+
+    fun removeListener(listener: GlobalCurrencyConversionChangeListener) {
+        listeners.remove(listener)
+    }
+
+    private fun notifyListeners(newValues: Map<String, CurrencyConversion>) {
+        listeners.forEach { it.onGlobalCurrencyConversionsChanged(newValues) }
+    }
+}
 
 fun loadAmountsFromPreferences(context: Context): Map<String, CurrencyConversion> {
     val sharedPreferences = context.getSharedPreferences(sharedPrefStorageKey, Context.MODE_PRIVATE)
@@ -28,7 +62,7 @@ fun loadAmountsFromPreferences(context: Context): Map<String, CurrencyConversion
     val currencyConversionsList = currencyConversionsString.split(",")
     for (currencyConversionString in currencyConversionsList) {
         val currencyConversionParts = currencyConversionString.split(";")
-        if (currencyConversionParts.size == 6) {
+        if (currencyConversionParts.size == 7) {
             val id = currencyConversionParts[0]
             currencyConversionMap[id] = CurrencyConversion(
                 srcCurrency = currencyConversionParts[1],
@@ -43,14 +77,15 @@ fun loadAmountsFromPreferences(context: Context): Map<String, CurrencyConversion
     return currencyConversionMap
 }
 
-fun fetchStoredAmounts(context: Context) {
+fun fetchStoredAmounts(context: Context): Map<String, CurrencyConversion> {
     val internalAmounts = loadAmountsFromPreferences(context)
-    currencyConversions.clear()
-    currencyConversions.putAll(internalAmounts)
+    GlobalCurrencyConversionManager.clearGlobalCurrencyConversions()
+    GlobalCurrencyConversionManager.setGlobalCurrencyConversions(internalAmounts)
+    return GlobalCurrencyConversionManager.getGlobalCurrencyConversions()
 }
 
-fun saveAmountsToPreferences(context: Context) {
-    val currencyConversionStrRep = mutableListOf<String>()
+fun saveAmountsToPreferences(context: Context, currencyConversions: MutableMap<String, CurrencyConversion>) {
+    var currencyConversionStrRep = mutableListOf<String>()
     for ((id, currencyConversion) in currencyConversions) {
         currencyConversionStrRep.add(
             "$id;" +
@@ -71,14 +106,30 @@ fun saveAmountsToPreferences(context: Context) {
 
 fun storeAmount(context: Context, currencyConversion: CurrencyConversion, id: String? = null) {
     var storeId = id
-    if (storeId === null) {
+    if (storeId == null) {
         storeId = UUID.randomUUID().toString()
     }
+    // Create a new map to store data
+    var currencyConversions: MutableMap<String, CurrencyConversion> = mutableMapOf()
+    // Set the global currency conversion here
+    currencyConversions.putAll(GlobalCurrencyConversionManager.getGlobalCurrencyConversions())
+    // Adjust for incoming data
     currencyConversions[storeId] = currencyConversion
-    saveAmountsToPreferences(context)
+    // Change the global currency conversions map
+    GlobalCurrencyConversionManager.setGlobalCurrencyConversions(currencyConversions)
+    // Store locally
+    saveAmountsToPreferences(context, currencyConversions)
 }
 
 fun deleteAmount(context: Context, id: String) {
+    // Create a new map to store data
+    var currencyConversions: MutableMap<String, CurrencyConversion> = mutableMapOf()
+    // Set the global currency conversion here
+    currencyConversions.putAll(GlobalCurrencyConversionManager.getGlobalCurrencyConversions())
+    // Remove the specific id
     currencyConversions.remove(id)
-    saveAmountsToPreferences(context)
+    // Change the global currency conversions map
+    GlobalCurrencyConversionManager.setGlobalCurrencyConversions(currencyConversions)
+    // Store locally
+    saveAmountsToPreferences(context, currencyConversions)
 }

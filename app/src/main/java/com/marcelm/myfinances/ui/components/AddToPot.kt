@@ -167,7 +167,7 @@ fun AddToPotModal(
                     DropdownMenu(
                         modifier = modifier,
                         offset = DpOffset(
-                            y = (-160).dp,
+                            y = (-230).dp,
                             x = 120.dp,
                         ),
                         expanded = srcCurrencyDropdown,
@@ -206,7 +206,7 @@ fun AddToPotModal(
                     DropdownMenu(
                         modifier = modifier,
                         offset = DpOffset(
-                            y = (-120).dp,
+                            y = (-200).dp,
                             x = 120.dp,
                         ),
                         expanded = trgtCurrencyDropdown,

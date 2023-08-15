@@ -98,7 +98,7 @@ fun AmountRow(
                     )
                     Text(
                         modifier = modifier,
-                        text = if (currencyConversion.conversionPrice === 0F) {
+                        text = if (currencyConversion.conversionPrice == 0F) {
                             "Fetching..."
                         } else {
                             "%.5f".format(
