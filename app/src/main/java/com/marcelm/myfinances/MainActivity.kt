@@ -21,10 +21,10 @@ import android.content.Context
 import androidx.compose.ui.platform.LocalContext
 import com.marcelm.myfinances.ui.methods.CurrencyConversion
 import com.marcelm.myfinances.ui.methods.currencyConversions
-import com.marcelm.myfinances.ui.methods.deleteFromAmounts
+import com.marcelm.myfinances.ui.methods.deleteAmount
 import com.marcelm.myfinances.ui.methods.fetchCurrencyPair
 import com.marcelm.myfinances.ui.methods.fetchStoredAmounts
-import com.marcelm.myfinances.ui.methods.storeAmounts
+import com.marcelm.myfinances.ui.methods.storeAmount
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -62,8 +62,7 @@ fun Home(context: Context, modifier: Modifier = Modifier, propShowModal: Boolean
         for (currencyConversion in currencyConversions) {
             fetchCurrencyPair(
                 context = context,
-                srcCurrency = currencyConversion.srcCurrency,
-                trgtCurrency = currencyConversion.trgtCurrency,
+                currencyConversion = currencyConversion,
             )
         }
     }
@@ -82,17 +81,22 @@ fun Home(context: Context, modifier: Modifier = Modifier, propShowModal: Boolean
             ) {
                 Header(modifier)
                 // Euro to gbp amount section
-                LazyColumn () {
-                    items(currencyConversions.size) { idx ->
-                        AmountRow(
-                            index = idx,
-                            currencyConversion = currencyConversions[idx],
-                            onDelete = { idx ->
-                                deleteFromAmounts(context, idx)
-                            }
-                        )
+                LazyColumn {
+                    items(currencyConversions.keys.toList().size) { idx ->
+                        val id = currencyConversions.keys.toList()[idx]
+                        val currencyConversion = currencyConversions[id]
+                        if (currencyConversion != null) {
+                            AmountRow(
+                                id = id,
+                                currencyConversion = currencyConversion,
+                                onDelete = { id ->
+                                    deleteAmount(context, id)
+                                }
+                            )
+                        }
                     }
                 }
+
             }
         }
         AddToPotButton(
@@ -106,7 +110,7 @@ fun Home(context: Context, modifier: Modifier = Modifier, propShowModal: Boolean
                 context = context,
                 modifier.align(Alignment.Center),
                 onSubmit = { currencyConversion: CurrencyConversion ->
-                    storeAmounts(context, currencyConversion)
+                    storeAmount(context, currencyConversion)
                     showModal = false
                 }
             )
@@ -117,15 +121,14 @@ fun Home(context: Context, modifier: Modifier = Modifier, propShowModal: Boolean
 @Preview(showBackground = false)
 @Composable
 fun HomePreview() {
-    currencyConversions.add(
-        CurrencyConversion(
-            srcCurrency = "EUR",
-            srcAmount = 10.10F,
-            srcPrice = 0.86F,
-            trgtCurrency = "GBP",
-            transactionTime = 1691928664,
-            conversionPrice = 0F
-        )
+    val id = "47c6977b-e8a3-416e-9c8b-8512314871b8"
+    currencyConversions[id] = CurrencyConversion(
+        srcCurrency = "EUR",
+        srcAmount = 10.10F,
+        srcPrice = 0.86F,
+        trgtCurrency = "GBP",
+        transactionTime = 1691928664,
+        conversionPrice = 0F
     )
     MyFinancesTheme {
         Home(

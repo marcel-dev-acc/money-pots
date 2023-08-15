@@ -1,8 +1,8 @@
 package com.marcelm.myfinances.ui.methods
 
 import android.content.Context
-import androidx.compose.runtime.mutableStateListOf
 import androidx.core.content.edit
+import java.util.*
 
 const val sharedPrefStorageKey: String = "MyFinancesPrefs"
 const val storageKey: String = "currencyConversions"
@@ -16,53 +16,50 @@ data class CurrencyConversion(
     val conversionPrice: Float,
 )
 
-val currencyConversions = mutableStateListOf<CurrencyConversion>()
+val currencyConversions: MutableMap<String, CurrencyConversion> = mutableMapOf()
 
-fun loadAmountsFromPreferences(context: Context): List<CurrencyConversion> {
+fun loadAmountsFromPreferences(context: Context): Map<String, CurrencyConversion> {
     val sharedPreferences = context.getSharedPreferences(sharedPrefStorageKey, Context.MODE_PRIVATE)
     val currencyConversionsString = sharedPreferences.getString(storageKey, "")
-    if (currencyConversionsString === "") {
-        return emptyList()
+    if (currencyConversionsString.isNullOrEmpty()) {
+        return emptyMap()
     }
-    val currencyConversionsListString =
-        currencyConversionsString?.split(",")?.map { it }
-    val currencyConversion = mutableStateListOf<CurrencyConversion>()
-    if (currencyConversionsListString != null) {
-        for (currencyConversionString in currencyConversionsListString) {
-            val currencyConversionListString =
-                currencyConversionString?.split(";")?.map { it }
-            currencyConversion.add(
-                CurrencyConversion(
-                    srcCurrency = currencyConversionListString?.get(0) ?: "",
-                    srcAmount = currencyConversionListString?.get(1)?.toFloat() ?: 0F,
-                    srcPrice = currencyConversionListString?.get(2)?.toFloat() ?: 0F,
-                    trgtCurrency = currencyConversionListString?.get(3) ?: "",
-                    transactionTime = currencyConversionListString?.get(4)?.toLong() ?: 0,
-                    conversionPrice = currencyConversionListString?.get(5)?.toFloat() ?: 0F,
-                ))
+    val currencyConversionMap = mutableMapOf<String, CurrencyConversion>()
+    val currencyConversionsList = currencyConversionsString.split(",")
+    for (currencyConversionString in currencyConversionsList) {
+        val currencyConversionParts = currencyConversionString.split(";")
+        if (currencyConversionParts.size == 6) {
+            val id = currencyConversionParts[0]
+            currencyConversionMap[id] = CurrencyConversion(
+                srcCurrency = currencyConversionParts[1],
+                srcAmount = currencyConversionParts[2].toFloat(),
+                srcPrice = currencyConversionParts[3].toFloat(),
+                trgtCurrency = currencyConversionParts[4],
+                transactionTime = currencyConversionParts[5].toLong(),
+                conversionPrice = currencyConversionParts[6].toFloat()
+            )
         }
     }
-    return currencyConversion
+    return currencyConversionMap
 }
-
 
 fun fetchStoredAmounts(context: Context) {
     val internalAmounts = loadAmountsFromPreferences(context)
-    for (amount in internalAmounts) {
-        currencyConversions.add(amount)
-    }
+    currencyConversions.clear()
+    currencyConversions.putAll(internalAmounts)
 }
 
-fun saveAmountsToPreferences(context: Context, currencyConversions: List<CurrencyConversion>) {
-    val currencyConversionStrRep = mutableStateListOf<String>()
-    for (currencyConversion in currencyConversions) {
+fun saveAmountsToPreferences(context: Context) {
+    val currencyConversionStrRep = mutableListOf<String>()
+    for ((id, currencyConversion) in currencyConversions) {
         currencyConversionStrRep.add(
-            currencyConversion.srcCurrency + ";" +
-            currencyConversion.srcAmount.toString() + ";" +
-            currencyConversion.srcPrice.toString() + ";" +
-            currencyConversion.trgtCurrency + ";" +
-            currencyConversion.transactionTime + ";" +
-            currencyConversion.conversionPrice
+            "$id;" +
+                    "${currencyConversion.srcCurrency};" +
+                    "${currencyConversion.srcAmount};" +
+                    "${currencyConversion.srcPrice};" +
+                    "${currencyConversion.trgtCurrency};" +
+                    "${currencyConversion.transactionTime};" +
+                    "${currencyConversion.conversionPrice}"
         )
     }
     val sharedPreferences = context.getSharedPreferences(sharedPrefStorageKey, Context.MODE_PRIVATE)
@@ -72,14 +69,16 @@ fun saveAmountsToPreferences(context: Context, currencyConversions: List<Currenc
     }
 }
 
-fun storeAmounts(context: Context, currencyConversion: CurrencyConversion) {
-    currencyConversions.add(currencyConversion)
-    saveAmountsToPreferences(context, currencyConversions)
+fun storeAmount(context: Context, currencyConversion: CurrencyConversion, id: String? = null) {
+    var storeId = id
+    if (storeId === null) {
+        storeId = UUID.randomUUID().toString()
+    }
+    currencyConversions[storeId] = currencyConversion
+    saveAmountsToPreferences(context)
 }
 
-fun deleteFromAmounts(context: Context, index: Int) {
-    if (index in 0 until currencyConversions.size) {
-        currencyConversions.removeAt(index)
-        saveAmountsToPreferences(context, currencyConversions)
-    }
+fun deleteAmount(context: Context, id: String) {
+    currencyConversions.remove(id)
+    saveAmountsToPreferences(context)
 }

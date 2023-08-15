@@ -32,9 +32,9 @@ import com.marcelm.myfinances.ui.methods.convertEpochTimeMsToDate
 @Composable
 fun AmountRow(
     modifier: Modifier = Modifier,
-    index: Int,
+    id: String,
     currencyConversion: CurrencyConversion,
-    onDelete: (idx: Int) -> Unit
+    onDelete: (id: String) -> Unit
 ) {
     Row(
         modifier = modifier
@@ -168,7 +168,7 @@ fun AmountRow(
                         modifier = modifier
                             .size(30.dp)
                             .clickable {
-                                onDelete(index)
+                                onDelete(id)
                             },
                         imageVector = Icons.Default.Delete, contentDescription = "Delete",
                         tint = Color(0xFFF5F5F5),
@@ -183,7 +183,7 @@ fun AmountRow(
 @Composable
 fun AmountRowPreview() {
     AmountRow(
-        index = 1,
+        id = "47c6977b-e8a3-416e-9c8b-8512314871b8",
         currencyConversion = CurrencyConversion(
             srcCurrency = "EUR",
             srcAmount = 1234.12F,

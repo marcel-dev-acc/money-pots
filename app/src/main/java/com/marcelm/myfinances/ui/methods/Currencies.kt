@@ -2,25 +2,15 @@ package com.marcelm.myfinances.ui.methods
 
 import android.content.Context
 import android.util.Log
-import android.widget.Toast
-import androidx.compose.runtime.mutableStateListOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
 import java.io.IOException
 import javax.net.ssl.SSLHandshakeException
 import org.jsoup.Jsoup
-
-import androidx.work.CoroutineWorker
-import androidx.work.PeriodicWorkRequest
-import androidx.work.WorkManager
-import androidx.work.WorkerParameters
-import kotlinx.coroutines.withContext
-import java.util.concurrent.TimeUnit
 
 object CurrencySymbolConverter {
     private val currencySymbolMap = mapOf(
@@ -36,8 +26,10 @@ object CurrencySymbolConverter {
 }
 
 
-fun fetchCurrencyPair(context: Context, srcCurrency: String, trgtCurrency: String) {
+fun fetchCurrencyPair(context: Context, currencyConversion: MutableMap.MutableEntry<String, CurrencyConversion>) {
     GlobalScope.launch(Dispatchers.IO) {
+        val srcCurrency = currencyConversion.value.srcCurrency
+        val trgtCurrency = currencyConversion.value.trgtCurrency
         val client = OkHttpClient()
         val request = Request.Builder()
             .url("https://finance.yahoo.com/quote/${srcCurrency}${trgtCurrency}=X/")
@@ -54,33 +46,8 @@ fun fetchCurrencyPair(context: Context, srcCurrency: String, trgtCurrency: Strin
                 )
                 try {
                     val numPrice = price?.toFloat()
-                    // Create new display currencyConversions list
-                    val newCurrencyConversions = mutableStateListOf<CurrencyConversion>()
-                    for (currencyConversion in currencyConversions) {
-                        if (
-                            currencyConversion.srcCurrency === srcCurrency &&
-                            currencyConversion.trgtCurrency === trgtCurrency
-                        ) {
-                            val newCurr = CurrencyConversion(
-                                srcCurrency = currencyConversion.srcCurrency,
-                                srcAmount = currencyConversion.srcAmount,
-                                srcPrice = currencyConversion.srcPrice,
-                                trgtCurrency = currencyConversion.trgtCurrency,
-                                transactionTime = currencyConversion.transactionTime,
-                                conversionPrice = if (numPrice !== null) numPrice else 0F,
-                            )
-                            newCurrencyConversions.add(newCurr)
-                        } else {
-                            newCurrencyConversions.add(currencyConversion)
-                        }
-                    }
-                    // Delete all existing currencyConversions
-                    for (idx in 0 until currencyConversions.size) {
-                        deleteFromAmounts(context, idx)
-                    }
-                    // Populate currencyConversions with new list
-                    for (newCurrencyConversion in newCurrencyConversions) {
-                        storeAmounts(context, newCurrencyConversion)
+                    if (numPrice !== null) {
+                        storeAmount(context, currencyConversion.value, currencyConversion.key)
                     }
                 } catch (e: NumberFormatException) {
                     // Do nothing
