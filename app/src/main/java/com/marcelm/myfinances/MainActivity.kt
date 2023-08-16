@@ -35,7 +35,7 @@ class MainActivity : ComponentActivity(), GlobalCurrencyConversionChangeListener
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Add the MainActivity as a listener to global currency conversions changes
+        // Add the MainActivity instances as listeners
         GlobalCurrencyConversionManager.addListener(this@MainActivity)
 
         // Start the foreground service
